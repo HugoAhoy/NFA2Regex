@@ -41,6 +41,7 @@ def dfa2regex(DFA):
         graph[state_i] = {}
         for state_j in states:
             graph[state_i][state_j] = None
+        graph[state_i][state_i] = 'ε'
 
     for state, trans in transition.items():
         for sym, dest in trans.items():
