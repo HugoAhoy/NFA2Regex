@@ -1,4 +1,5 @@
 from collections import deque
+from typing import final
 
 epsilon = float("inf")
 
@@ -29,6 +30,30 @@ def extend_delta(s, symbol, transition, eclose_dict):
                 res.append(s)
     return res
 
+def path_iter(graph, start, finals):
+    n = len(graph)
+    path_record = [graph]
+    states = list(graph.keys())
+    for k in range(1, n+1):
+        # build an empty path record of k
+        path_record.append({})
+        for state in states:
+            path_record[k][state] = {}
+        
+        for state_i in states:
+            for state_j in states:
+                re_items =  []
+                if path_record[k-1][state_i][state_j] is not None:
+                    re_items.append(path_record[k-1][state_i][state_j])
+                if path_record[k-1][state_i][states[k-1]] is not None \
+                    and path_record[k-1][states[k-1]][states[k-1]] is not None and path_record[k-1][states[k-1]][state_j] is not None:
+                    re_items.append("{}({})*{}".format(path_record[k-1][state_i][states[k-1]],path_record[k-1][states[k-1]][states[k-1]],path_record[k-1][states[k-1]][state_j]))
+                path_record[k][state_i][state_j] = None if len(re_items) == 0 else '+'.join(re_items)
+    res_items = []
+    for f in finals:
+        if path_record[n][start][f] is not None:
+            res_items.append(path_record[n][start][f])
+    return '+'.join(res_items)
 
 def dfa2regex(DFA):
     start = DFA["start"]
@@ -46,13 +71,14 @@ def dfa2regex(DFA):
     for state, trans in transition.items():
         for sym, dest in trans.items():
             if graph[state][dest] is not None:
-                graph[state][dest] = graph[state][dest] + '|' + sym
+                graph[state][dest] = graph[state][dest] + '+' + sym
             else:
                 graph[state][dest] = sym
     
     print(graph)
     
-    # TODO: 路径叠代法
+    # 路径叠代法
+    return path_iter(graph,start, finals)
 
 
 def nfa2dfa(NFA):
@@ -164,4 +190,6 @@ if __name__ == "__main__":
     dfa = nfa2dfa(NFA_example_2)
     print("DFA",dfa)
 
-    dfa2regex(dfa)
+    regex = dfa2regex(dfa)
+
+    print(regex)
